@@ -3,7 +3,7 @@ from function import *
 
 
 class Cascade:
-    name: str = "Cascade"
+    name: str = "Каскад"
 
     def __repr__(self):
         return self.name
@@ -12,15 +12,11 @@ class Cascade:
         return self.name
 
     def __call__(self, *args, **kwargs):
-        if 'model' in self.__dict__:
-            self.out = self.model(*args)
-            return self.out
-        if 'fun' in self.__dict__:
-            self.out = self.fun(*args)
-            return self.out
+        self.out = self.fun(*args)
+        return self.out
 
 
-class CascadeFunction(Cascade):
+class CascadeElement(Cascade):
     def __init__(self, fun, name=None):
         self.fun = fun
         self.name = name if name is not None else self.name
@@ -67,14 +63,14 @@ class YoloCascade(CascadeBlock):
     def __init__(
             self, weight, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
     ):
-        self.preprocess_cascad = CascadeFunction(
+        self.preprocess_cascad = CascadeElement(
             preprocess_video(frame_size),
             "Препроцесс"
         )
 
         self.yolo = CascadeModel(weight, "Yolo")
 
-        self.postprocess_cascad = CascadeFunction(
+        self.postprocess_cascad = CascadeElement(
             postprocess_yolo(frame_size, score_threshold, iou_threshold, method, sigma),
             "Постобработка"
         )
