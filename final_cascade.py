@@ -1,5 +1,5 @@
 from cascade import *
-from function import *
+from colab_function import *
 
 
 class BusTrackerCascade(Cascade):

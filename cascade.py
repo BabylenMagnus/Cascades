@@ -1,7 +1,3 @@
-from tensorflow.keras.models import load_model
-from function import *
-
-
 class Cascade:
     name: str = "Каскад"
 
@@ -22,23 +18,12 @@ class CascadeElement(Cascade):
         self.name = name if name is not None else self.name
 
 
-class CascadeModel(Cascade):
-    def __init__(self, weight, name=None):
-        self.model = load_model(weight)
-        self.name = name if name is not None else self.name
-
-
 class CascadeBlock(Cascade):
     def __init__(self, cascades_list: list, adjacency_map: dict):
 
         self.cascades_list = cascades_list
         self.adjacency_map = adjacency_map
-
-    def __repr__(self):
-        return "Каскад из:\n" + ", ".join([str(x.name) for x in self.cascades_list])
-
-    def __str__(self):
-        return "Каскад из:\n" + ", ".join([str(x.name) for x in self.cascades_list])
+        self.name = "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"
 
     # Лучше продумать, переделать
     def __call__(self, item):
@@ -58,40 +43,9 @@ class CascadeBlock(Cascade):
             yield self.__call__(item)
 
 
-class YoloCascade(CascadeBlock):
+class PreMadeCascade(CascadeBlock):
+    def __str__(self):
+        return self.name
 
-    def __init__(
-            self, weight, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
-    ):
-        self.preprocess_cascad = CascadeElement(
-            preprocess_video(frame_size),
-            "Препроцесс"
-        )
-
-        self.yolo = CascadeModel(weight, "Yolo")
-
-        self.postprocess_cascad = CascadeElement(
-            postprocess_yolo(frame_size, score_threshold, iou_threshold, method, sigma),
-            "Постобработка"
-        )
-
-        cascades_list = [
-            self.preprocess_cascad, self.yolo, self.postprocess_cascad
-        ]
-
-        adjacency_map = {
-            0: ['ITER'],
-            1: [0],
-            2: [1, 'ITER']
-        }
-
-        super().__init__(cascades_list, adjacency_map)
-
-        self.name = name if name is not None else "Yolo Каскад"
-
-    def get_loop_out(self, iterator):
-        return [x for x in self.loop(iterator)]
-
-
-class CascadeDataset:
-    pass
+    def __repr__(self):
+        return "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"

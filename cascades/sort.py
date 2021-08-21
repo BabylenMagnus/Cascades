@@ -172,7 +172,7 @@ def associate_detections_to_trackers(detections, tracker, iou_threshold=0.3):
 class SortCascade(Cascade):
 
     def __init__(
-            self, max_age, min_hits,
+            self, max_age=5, min_hits=3
     ):
         self.max_age = max_age
         self.min_hits = min_hits
@@ -197,9 +197,7 @@ class SortCascade(Cascade):
         ret = []
         for t, trk in enumerate(tracks):
             pos = self.trackers[t].predict()[0]
-            # print(pos)
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
-            # print(trk[:])
             if np.any(np.isnan(pos)):
                 to_del.append(t)
         tracks = np.ma.compress_rows(np.ma.masked_invalid(tracks))

@@ -1,42 +1,8 @@
+from cascade import CascadeElement, PreMadeCascade
 import cv2
 import numpy as np
 import tensorflow as tf
-
-
-def video_iterator(video, step=100, crop=None):
-    length = video.get(cv2.CAP_PROP_FRAME_COUNT)
-    frame_num = 0
-
-    while frame_num <= length:
-        video.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
-        ret, frame = video.read()
-
-        frame = frame if crop is None else frame[
-                                           crop['h'][0]: crop['h'][1],
-                                           crop['w'][0]: crop['w'][1]
-                                           ]
-
-        yield frame
-
-        frame_num += step
-
-
-def preprocess_video(frame_size):
-    frame_size = (frame_size, frame_size)
-
-    def fun(frame):
-        ih, iw = frame_size  # Получаем целевую высоту и ширину изображения
-        h, w, _ = frame.shape  # Получаем исходную высоту и ширину изображения
-        scale = min(iw / w, ih / h)  # Получаем минимальное отношение между высотой и шириной
-        nw, nh = int(scale * w), int(scale * h)  # Получаем новое значение высоты и ширины
-        image_resized = cv2.resize(frame, (nw, nh))  # Изменяем размер изображения
-        image_paded = np.full(shape=[ih, iw, 3], fill_value=128.0)  # Создаем пустой массив
-        dw, dh = (iw - nw) // 2, (ih - nh) // 2  # Получаем центр изображения
-        image_paded[dh:nh + dh, dw:nw + dw, :] = image_resized  # Вставляем изображения
-        image_paded = image_paded / 255.  # Нормируем изображение
-        return image_paded[np.newaxis, ...].astype(np.float32)
-
-    return fun
+import torch
 
 
 def postprocess_yolo(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms', sigma=0.3):
@@ -132,31 +98,53 @@ def postprocess_yolo(frame_size, score_threshold=0.3, iou_threshold=0.45, method
     return fun
 
 
-def head_cropping(width_frame=80, size=64, ignore_class=[]):
-    size = (size, size)
-    resize_img = lambda x: cv2.resize(x, size) / 255
+def preprocess_video(frame_size):
 
-    def fun(bbox, img):
-
-        heads = []
-
-        for b in bbox:
-            if b[-1] in ignore_class:
-                continue
-
-            center = (b[3] + b[1]) // 2
-            top = 0 if center < width_frame else center - width_frame
-            bot = center + width_frame
-
-            center = (b[2] + b[0]) // 2
-            left = 0 if center < width_frame else center - width_frame
-            right = center + width_frame
-
-            heads.append(
-                resize_img(img[top: bot, left: right])
-            )
-
-        return heads
+    def fun(frame):
+        h, w, _ = frame.shape  # Получаем исходную высоту и ширину изображения
+        scale = min(frame_size / w, frame_size / h)  # Получаем минимальное отношение между высотой и шириной
+        nw, nh = int(scale * w), int(scale * h)  # Получаем новое значение высоты и ширины
+        image_resized = cv2.resize(frame, (nw, nh))  # Изменяем размер изображения
+        image_paded = np.full(shape=[frame_size, frame_size, 3], fill_value=128.0)  # Создаем пустой массив
+        dw, dh = (frame_size - nw) // 2, (frame_size - nh) // 2  # Получаем центр изображения
+        image_paded[dh:nh + dh, dw:nw + dw, :] = image_resized  # Вставляем изображения
+        image_paded = image_paded / 255.  # Нормируем изображение
+        return image_paded[np.newaxis, ...].astype(np.float32)
 
     return fun
 
+
+class YoloCascade(PreMadeCascade):
+
+    def __init__(
+            self, yolo=None, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
+    ):
+
+        self.yolo = CascadeElement(yolo) if yolo is not None else \
+            CascadeElement(torch.hub.load('ultralytics/yolov5', 'yolov5l'))
+        self.yolo.name = "Yolo модель"
+
+        if yolo is not None:
+            self.preprocess_cascad = CascadeElement(
+                preprocess_video(frame_size),
+                "Препроцесс"
+            )
+
+        self.postprocess_cascad = CascadeElement(
+            postprocess_yolo(frame_size, score_threshold, iou_threshold, method, sigma),
+            "Постобработка"
+        )
+
+        cascades_list = [
+            self.preprocess_cascad, self.yolo, self.postprocess_cascad
+        ]
+
+        adjacency_map = {
+            0: ['ITER'],
+            1: [0],
+            2: [1, 'ITER']
+        }
+
+        super().__init__(cascades_list, adjacency_map)
+
+        self.name = "Yolo"
