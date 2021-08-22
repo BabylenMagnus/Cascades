@@ -1,5 +1,5 @@
 import numpy as np
-from filterpy.kalman import KalmanFilter
+import filterpy.kalman
 from cascade import Cascade
 
 
@@ -61,7 +61,7 @@ def linear_assignment(cost_matrix):
         return np.array(list(zip(x, y)))
 
 
-class KalmanBoxTracker(object):
+class _KalmanBoxTracker(object):
     """
         This class represents the internal state of individual tracked objects observed as bbox.
     """
@@ -72,7 +72,7 @@ class KalmanBoxTracker(object):
             Initialises a tracker using initial bounding box.
         """
         # define constant velocity model
-        self.kf = KalmanFilter(dim_x=7, dim_z=4)
+        self.kf = filterpy.kalman.KalmanFilter(dim_x=7, dim_z=4)
         self.kf.F = np.array(
             [[1, 0, 0, 0, 1, 0, 0], [0, 1, 0, 0, 0, 1, 0], [0, 0, 1, 0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0],
              [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1]])
@@ -87,8 +87,8 @@ class KalmanBoxTracker(object):
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
-        self.id = KalmanBoxTracker.count
-        KalmanBoxTracker.count += 1
+        self.id = _KalmanBoxTracker.count
+        _KalmanBoxTracker.count += 1
         self.history = []
         self.hits = 0
         self.hit_streak = 0
@@ -212,7 +212,7 @@ class SortCascade(Cascade):
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
-            trk = KalmanBoxTracker(dets[i, :])
+            trk = _KalmanBoxTracker(dets[i, :])
             self.trackers.append(trk)
         i = len(self.trackers)
         for trk in reversed(self.trackers):

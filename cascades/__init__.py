@@ -1,2 +1,3 @@
-import object_detection
-import tracking
+from cascades import \
+    tracking, \
+    object_detection

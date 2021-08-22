@@ -1,1 +1,1 @@
-import cascades.object_detection.yolo
+from cascades.object_detection import yolo

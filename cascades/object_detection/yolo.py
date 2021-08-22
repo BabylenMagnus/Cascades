@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 
-def postprocess_yolo(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms', sigma=0.3):
+def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms', sigma=0.3):
     def bboxes_iou(boxes1, boxes2):
         """Get IoU between two boxes
 
@@ -116,7 +116,7 @@ def preprocess_video(frame_size):
 class YoloCascade(PreMadeCascade):
 
     def __init__(
-            self, yolo, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
+            self, yolo=None, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
     ):
 
         self.yolo = CascadeElement(yolo, "Yolo модель")
@@ -127,7 +127,7 @@ class YoloCascade(PreMadeCascade):
         )
 
         self.postprocess_cascad = CascadeElement(
-            postprocess_yolo(frame_size, score_threshold, iou_threshold, method, sigma),
+            postprocess(frame_size, score_threshold, iou_threshold, method, sigma),
             "Постобработка"
         )
 

@@ -1,1 +1,1 @@
-from cascades.object_detection import yolo
+from cascade_function import object_detection
