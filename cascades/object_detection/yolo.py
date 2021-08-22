@@ -2,7 +2,6 @@ from cascade import CascadeElement, PreMadeCascade
 import cv2
 import numpy as np
 import tensorflow as tf
-import torch
 
 
 def postprocess_yolo(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms', sigma=0.3):
@@ -117,18 +116,15 @@ def preprocess_video(frame_size):
 class YoloCascade(PreMadeCascade):
 
     def __init__(
-            self, yolo=None, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
+            self, yolo, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
     ):
 
-        self.yolo = CascadeElement(yolo) if yolo is not None else \
-            CascadeElement(torch.hub.load('ultralytics/yolov5', 'yolov5l'))
-        self.yolo.name = "Yolo модель"
+        self.yolo = CascadeElement(yolo, "Yolo модель")
 
-        if yolo is not None:
-            self.preprocess_cascad = CascadeElement(
-                preprocess_video(frame_size),
-                "Препроцесс"
-            )
+        self.preprocess_cascad = CascadeElement(
+            preprocess_video(frame_size),
+            "Препроцесс"
+        )
 
         self.postprocess_cascad = CascadeElement(
             postprocess_yolo(frame_size, score_threshold, iou_threshold, method, sigma),
