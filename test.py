@@ -18,7 +18,7 @@ def rec_dive_models(obj):
             if x not in standart_class and inspect.isclass(getattr(obj, x)):
                 return getattr(obj, x)
 
-    out = dict()
+    out = Dict()
     for name in attributes:
         out[name] = rec_dive_models(getattr(obj, name))
 
@@ -26,13 +26,12 @@ def rec_dive_models(obj):
 
 
 def rec_dive_function(obj):
-    print(obj)
     attributes = list(filter(lambda x: not x.startswith('_'), dir(obj)))
 
     if not isinstance(getattr(obj, attributes[0]), types.ModuleType):
         return [getattr(obj, x) for x in attributes if inspect.isfunction(getattr(obj, x))]
 
-    out = dict()
+    out = Dict()
     for name in attributes:
         out[name] = rec_dive_function(getattr(obj, name))
 
