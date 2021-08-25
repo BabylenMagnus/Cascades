@@ -1,18 +1,17 @@
 import cv2
+import numpy as np
+from typing import Callable
 
 
-def count():
-    def fun(bbox):
-        return bbox.shape[-2]
-
-    return fun
+def count(bbox: np.ndarray) -> int:
+    return bbox.shape[-2]
 
 
-def head_cropping(width_object=80, out_size=64):
+def head_cropping(width_object: int = 80, out_size: int = 64) -> Callable:
     size = (out_size, out_size)
     resize_img = lambda x: cv2.resize(x, size) / 255
 
-    def fun(bbox, img):
+    def fun(bbox: np.ndarray, img: np.ndarray) -> np.ndarray:
         heads = []
 
         for b in bbox:
@@ -28,6 +27,6 @@ def head_cropping(width_object=80, out_size=64):
                 resize_img(img[top: bot, left: right])
             )
 
-        return heads
+        return np.array(heads)
 
     return fun

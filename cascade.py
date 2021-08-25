@@ -1,4 +1,11 @@
 class Cascade:
+    """
+    Базовый класс для всех Каскадов
+
+    - Есть имя, которое можно задать
+    - Его строковое представление - это его имя (__str__ и __repr__ переопределены для логирования)
+    - Этот объект вызываем (обязательно для всех функций и моделей)
+    """
     name: str = "Каскад"
 
     def __repr__(self):
@@ -13,12 +20,24 @@ class Cascade:
 
 
 class CascadeElement(Cascade):
+    """
+    Используются для вызова функции или модели
+    """
     def __init__(self, fun, name=None):
         self.fun = fun
         self.name = name if name is not None else self.name
 
 
 class CascadeBlock(Cascade):
+    """
+    Занимается всей логикой для связи каскадов
+    Может содержать CascadeElement и CascadeBlock
+    Необходим list из Каскадов и матрица смежностей их
+    (dict где ключ - id Каскада в list, а значение - id Каскадов, выход из которых пойдёт на вход)
+
+    Если при вызове Каскад передал None, то передаёт None (важно учитывать при создании функций)
+    Имя блока - это все имена каскадов, из которых он состоит (у заготовленных блоков __str__ - это заготовленное имя)
+    """
     def __init__(self, cascades_list: list, adjacency_map: dict):
 
         self.cascades_list = cascades_list

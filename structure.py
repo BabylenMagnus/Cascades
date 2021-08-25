@@ -3,11 +3,10 @@ import cascade_function
 from addict import Dict
 import types
 import inspect
-from pprint import pprint
 import cascade
 
 
-standart_class = list(filter(lambda x: not x.startswith('_'), dir(cascade)))
+standard_class = list(filter(lambda x: not x.startswith('_'), dir(cascade)))
 
 
 def rec_dive_models(obj):
@@ -15,7 +14,7 @@ def rec_dive_models(obj):
 
     if not isinstance(getattr(obj, attributes[0]), types.ModuleType):
         for x in attributes:
-            if x not in standart_class and inspect.isclass(getattr(obj, x)):
+            if x not in standard_class and inspect.isclass(getattr(obj, x)):
                 return getattr(obj, x)
 
     out = Dict()
@@ -43,7 +42,7 @@ def rec_dive_function(obj):
     return out
 
 
-def get_struct():
+def get_structure():
     file_struct = Dict()
 
     file_struct['model'] = rec_dive_models(cascades)

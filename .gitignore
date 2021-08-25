@@ -2,3 +2,4 @@
 __pycache__/
 queue_count/videos/
 queue_count/weights
+test/
