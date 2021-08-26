@@ -1,5 +1,11 @@
-from typing import Callable
+from structure import get_structure
+from pprint import pprint
 from inspect import signature
+import torch
+import numpy as np
+from typing import Callable
+import cv2
+import random
 
 
 class Cascade:
@@ -70,9 +76,50 @@ class CascadeBlock(Cascade):
             yield self.__call__(item)
 
 
-class PreMadeCascade(CascadeBlock):
-    def __str__(self):
-        return self.name
+struct = get_structure()
+pprint(struct)
 
-    def __repr__(self):
-        return "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"
+count = struct.function.object_detection.count
+
+model = torch.hub.load('ultralytics/yolov5', 'yolov5l')
+
+
+def parse_model(img: np.ndarray) -> np.ndarray:
+    out = model(img)
+    out = out.pred[0].numpy()
+    return out[out[:, -1] == 0]  # 0 is person
+
+
+def plot_box(x, img, label=None):
+    # Plots one bounding box on image img
+    tl = 2
+    color = [random.randint(0, 255) for _ in range(3)]
+    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
+    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+    if label:
+        tf = 2
+        t_size = cv2.getTextSize(label, 0, fontScale=1, thickness=tf)[0]
+        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, 1, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
+
+
+def plot_all_bbox(bbox: np.ndarray, img: np.ndarray):
+    for *xyxy, id in bbox:
+        plot_box(xyxy, img, label=str(id))
+    print(img.shape)  # это функция работает только в коллабе
+
+
+sort = struct.model.tracking.sort()
+
+num = np.ones((1, 3))
+
+count_element = CascadeElement(count, name="Подсчёт")
+model_cas = CascadeElement(parse_model, name="Yolo модель")
+print_cas = CascadeElement(plot_all_bbox, name="принтушка")
+
+print(count_element.signature)
+print(len(count_element.signature.parameters))
+print(count_element.signature.return_annotation)
+# print(model_cas.signature.return_annotation)
+

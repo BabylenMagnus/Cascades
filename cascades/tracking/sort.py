@@ -181,7 +181,7 @@ class SortCascade(Cascade):
 
         self.name = "Sort"
 
-    def __call__(self, dets=np.empty((0, 5))):
+    def __call__(self, dets: np.ndarray) -> np.ndarray:
         """
             Params:
               dots - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
