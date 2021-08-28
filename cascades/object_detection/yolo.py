@@ -1,10 +1,8 @@
-from cascade import CascadeElement, PreMadeCascade
+from cascade import CascadeElement, CascadeBlock
 import cv2
 import numpy as np
 import tensorflow as tf
-from typing import Callable
-from pydantic.types import confloat
-from pydantic import PositiveInt
+import typing
 
 
 def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, soft_nms: bool = False, sigma=0.3):
@@ -116,15 +114,12 @@ def preprocess_video(frame_size):
     return fun
 
 
-ConstrainedFloatValueGe0Le1 = confloat(ge=0, le=1)
-
-
-class YoloCascade(PreMadeCascade):
+class YoloCascade(CascadeBlock):
 
     def __init__(
-            self, model: Callable = None, frame_size: PositiveInt = 416,
-            score_threshold: ConstrainedFloatValueGe0Le1 = .3,
-            iou_threshold: ConstrainedFloatValueGe0Le1 = .45, soft_nms=False, sigma: ConstrainedFloatValueGe0Le1 = .31
+            self, model: typing.Callable = None, frame_size: int = 416,
+            score_threshold: float = .3,
+            iou_threshold: float = .45, soft_nms=False, sigma: float = .31
     ):
 
         self.yolo = CascadeElement(model, "Yolo модель")
@@ -150,5 +145,3 @@ class YoloCascade(PreMadeCascade):
         }
 
         super().__init__(cascades_list, adjacency_map)
-
-        self.name = "Yolo"

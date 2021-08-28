@@ -1,6 +1,6 @@
 import numpy as np
 import filterpy.kalman
-from cascade import Cascade
+from cascade import CascadeElement
 
 
 def convert_bbox_to_z(bbox):
@@ -169,17 +169,17 @@ def associate_detections_to_trackers(detections, tracker, iou_threshold=0.3):
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
 
-class SortCascade(Cascade):
+class SortCascade(CascadeElement):
 
     def __init__(
-            self, max_age=5, min_hits=3
+            self, max_age: int = 5, min_hits: int = 3
     ):
         self.max_age = max_age
         self.min_hits = min_hits
         self.trackers = []
         self.frame_count = 0
 
-        self.name = "Sort"
+        super(SortCascade, self).__init__(self.__call__, 'Sort')
 
     def __call__(self, dets: np.ndarray) -> np.ndarray:
         """

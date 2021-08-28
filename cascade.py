@@ -12,6 +12,9 @@ class Cascade:
     """
     name: str = "Каскад"
 
+    def __init__(self, name: str):
+        self.name = name if name is not None else self.name
+
     def __repr__(self):
         return self.name
 
@@ -25,9 +28,11 @@ class CascadeElement(Cascade):
     """
 
     def __init__(self, fun: Callable, name: str = None):
+        super(CascadeElement, self).__init__(name)
+
         self.fun = fun
-        self.signature = signature(fun)
-        self.name = name if name is not None else self.name
+        self.input = signature(fun).parameters
+        self.output = signature(fun).return_annotation
 
     def __call__(self, *agr):
         self.out = self.fun(*agr)
@@ -49,7 +54,10 @@ class CascadeBlock(Cascade):
 
         self.cascades_list = cascades_list
         self.adjacency_map = adjacency_map
-        self.name = "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"
+        self.input = signature(cascades_list[0]).parameters
+        self.output = signature(cascades_list[-1]).return_annotation
+        name = "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"
+        super(CascadeBlock, self).__init__(name)
 
     # Лучше продумать, переделать
     def __call__(self, item):
@@ -68,11 +76,3 @@ class CascadeBlock(Cascade):
     def loop(self, iterator):
         for item in iterator:
             yield self.__call__(item)
-
-
-class PreMadeCascade(CascadeBlock):
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"

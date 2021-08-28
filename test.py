@@ -1,71 +1,73 @@
-from pydantic_structer.object_detection.yolo import ParametersExtraData
-from pydantic_structer.mixins import BaseMixinData
-# from keras.models import load_model
-from cascades.object_detection.yolo import YoloCascade
-from inspect import signature
-from pydantic import BaseModel
-from typing import Any
-from pydantic import validator
-from typing import Callable
+from keras.models import load_model
+from structure import get_structure
+from cascade import CascadeElement
 
-#
-# model = load_model('yolo_head.h5')
-# params_dict = dict(model=lambda x: 2,
-#                    frame_size=416,
-#                    score_threshold=.2,
-#                    iou_threshold=.7,
-#                    soft_nms=True,
-#                    sigma=.9
-#                    )
-#
-# params = ParametersExtraData(**params_dict)
-
-# print(params.dict())
+import cv2
+import random
+import numpy as np
 
 
-class A(BaseMixinData):
-    name: str = "Name"
-    source: Any
-
-    @validator('source', always=True)
-    def _validate_check_source(cls, value):
-        if not isinstance(value, Callable):
-            raise Exception("Ошибка")
-        return value
-
-    def dict(self, **kwargs):
-        kwargs.update({'exclude': {'source'}})
-        return super().dict(**kwargs)
-
-
-# print(A(source=lambda x: 4).dict())
+def plot_box(x, img, label=None):
+    # Plots one bounding box on image img
+    tl = 2
+    color = [random.randint(0, 255) for _ in range(3)]
+    c1, c2 = (int(x[0]), int(x[1])), (int(x[2]), int(x[3]))
+    cv2.rectangle(img, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+    if label:
+        tf = 2
+        t_size = cv2.getTextSize(label, 0, fontScale=1, thickness=tf)[0]
+        c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+        cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
+        cv2.putText(img, label, (c1[0], c1[1] - 2), 0, 1, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 
-# a = type(BaseModel, (), {**params_dict})
-# a = a()
-# print(a.dict())
-# class NewBaseMixinData(BaseModel):
-#     def __init__(self, **data):
-#         for __name, __field in self.__fields__.items():
-#             __type = __field.type_
-#             if hasattr(__type, "__mro__") and UniqueListMixin in __type.__mro__:
-#                 data.update({__name: __type(data.get(__name, __type()))})
-#         super().__init__(**data)
+def plot_all_bbox(bbox: np.ndarray, img: np.ndarray) -> np.ndarray:
+    for *xyxy, id in bbox:
+        plot_box(xyxy, img, label=str(id))
+    print(img.shape)  # это функция работает только в коллабе
+    return img
 
 
-# for i in params.__fields__.items():
-#     print(i)
-#
-# print('\n\n')
-#
+def validate(cascades_list, adjacency_map):
+    for key, inp in adjacency_map.items():
+        element = cascades_list[key]
+        print(element.input, element.output)
+    print('\n\n')
+    pass
 
-# for ty in signature(YoloCascade).parameters.items():
-#     print(ty)
 
-print(signature(YoloCascade).parameters)
-# print(signature(YoloCascade).parameters)
+struct = get_structure()
+class_yolo = struct.model.object_detection.yolo
+class_sort = struct.model.tracking.sort
+model = load_model('yolo_head.h5')
 
-# print(params)
+yolo = class_yolo(model)
+sort = class_sort()
+plot = CascadeElement(plot_all_bbox, name="Рисовалка")
 
-# print(YoloCascade(model))
-# print(YoloCascade(**params))
+print(validate(
+    [yolo, sort, plot],
+    {
+        0: ['ITER'],
+        1: [0],
+        2: [1, 'ITER']
+    }
+))
+
+print(validate(
+    [yolo, sort, plot],
+    {
+        0: ['ITER'],
+        1: [0, 'ITER'],
+        2: [1, 'ITER']
+    }
+))
+
+print(validate(
+    [sort, yolo, plot],
+    {
+        0: ['ITER'],
+        1: [0],
+        2: [1, 'ITER']
+    }
+))
