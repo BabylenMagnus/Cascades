@@ -2,9 +2,12 @@ from cascade import CascadeElement, PreMadeCascade
 import cv2
 import numpy as np
 import tensorflow as tf
+from typing import Callable
+from pydantic.types import confloat
+from pydantic import PositiveInt
 
 
-def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms', sigma=0.3):
+def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, soft_nms: bool = False, sigma=0.3):
     def bboxes_iou(boxes1, boxes2):
         """Get IoU between two boxes
 
@@ -82,12 +85,13 @@ def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms
                 # Process 3: Calculate this bounding box A and
                 iou = bboxes_iou(best_bbox[np.newaxis, :4], cls_bboxes[:, :4])
                 weight = np.ones((len(iou),), dtype=np.float32)
-                assert method in ['nms', 'soft-nms']
-                if method == 'nms':
+
+                if soft_nms:
+                    weight = np.exp(-(1.0 * iou ** 2 / sigma))
+                else:
                     iou_mask = iou > iou_threshold
                     weight[iou_mask] = 0.0
-                if method == 'soft-nms':
-                    weight = np.exp(-(1.0 * iou ** 2 / sigma))
+
                 cls_bboxes[:, 4] = cls_bboxes[:, 4] * weight
                 score_mask = cls_bboxes[:, 4] > 0.
                 cls_bboxes = cls_bboxes[score_mask]
@@ -98,7 +102,6 @@ def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, method='nms
 
 
 def preprocess_video(frame_size):
-
     def fun(frame):
         h, w, _ = frame.shape  # Получаем исходную высоту и ширину изображения
         scale = min(frame_size / w, frame_size / h)  # Получаем минимальное отношение между высотой и шириной
@@ -113,13 +116,18 @@ def preprocess_video(frame_size):
     return fun
 
 
+ConstrainedFloatValueGe0Le1 = confloat(ge=0, le=1)
+
+
 class YoloCascade(PreMadeCascade):
 
     def __init__(
-            self, yolo=None, frame_size=416, score_threshold=.3, iou_threshold=.45, method='nms', sigma=0.3, name=None
+            self, model: Callable = None, frame_size: PositiveInt = 416,
+            score_threshold: ConstrainedFloatValueGe0Le1 = .3,
+            iou_threshold: ConstrainedFloatValueGe0Le1 = .45, soft_nms=False, sigma: ConstrainedFloatValueGe0Le1 = .31
     ):
 
-        self.yolo = CascadeElement(yolo, "Yolo модель")
+        self.yolo = CascadeElement(model, "Yolo модель")
 
         self.preprocess_cascad = CascadeElement(
             preprocess_video(frame_size),
@@ -127,7 +135,7 @@ class YoloCascade(PreMadeCascade):
         )
 
         self.postprocess_cascad = CascadeElement(
-            postprocess(frame_size, score_threshold, iou_threshold, method, sigma),
+            postprocess(frame_size, score_threshold, iou_threshold, soft_nms, sigma),
             "Постобработка"
         )
 
