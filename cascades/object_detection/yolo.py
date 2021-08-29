@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import typing
+from collections import OrderedDict
 
 
 def postprocess(frame_size, score_threshold=0.3, iou_threshold=0.45, soft_nms: bool = False, sigma=0.3):
@@ -134,14 +135,10 @@ class YoloCascade(CascadeBlock):
             "Постобработка"
         )
 
-        cascades_list = [
-            self.preprocess_cascad, self.yolo, self.postprocess_cascad
-        ]
+        adjacency_map = OrderedDict([
+            (self.preprocess_cascad, ['ITER']),
+            (self.yolo, [0]),
+            (self.postprocess_cascad, [1, 'ITER'])
+        ])
 
-        adjacency_map = {
-            0: ['ITER'],
-            1: [0],
-            2: [1, 'ITER']
-        }
-
-        super().__init__(cascades_list, adjacency_map)
+        super().__init__(adjacency_map)

@@ -1,5 +1,6 @@
 from typing import Callable
 from inspect import signature
+from collections import OrderedDict
 
 
 class Cascade:
@@ -26,6 +27,7 @@ class CascadeElement(Cascade):
     """
     Используются для вызова функции или модели
     """
+    out: None
 
     def __init__(self, fun: Callable, name: str = None):
         super(CascadeElement, self).__init__(name)
@@ -50,28 +52,23 @@ class CascadeBlock(Cascade):
     Имя блока - это все имена каскадов, из которых он состоит (у заготовленных блоков __str__ - это заготовленное имя)
     """
 
-    def __init__(self, cascades_list: list, adjacency_map: dict):
+    def __init__(self, adjacency_map: OrderedDict[CascadeElement, list]):
 
-        self.cascades_list = cascades_list
         self.adjacency_map = adjacency_map
-        self.input = signature(cascades_list[0]).parameters
-        self.output = signature(cascades_list[-1]).return_annotation
-        name = "[" + ", ".join([str(x.name) for x in self.cascades_list]) + "]"
+        self.input = signature(next(iter(adjacency_map))).parameters
+        self.output = signature(next(reversed(adjacency_map))).return_annotation
+        name = "[" + ", ".join([str(x.name) for x in adjacency_map]) + "]"
         super(CascadeBlock, self).__init__(name)
 
-    # Лучше продумать, переделать
     def __call__(self, item):
-        global i
         self.out_map = {}
-        for i, cascade in enumerate(self.cascades_list):
-            self.out_map[i] = cascade(
-                *[item if j == 'ITER' else self.out_map[j] for j in self.adjacency_map[i]]
-            )
 
-            if self.out_map[i] is None:
+        global cascade
+        for cascade, inp in self.adjacency_map.items():
+            if cascade(*[item if j == 'ITER' else j.out for j in inp]) is None:
                 return None
 
-        return self.out_map[i]
+        return cascade.out
 
     def loop(self, iterator):
         for item in iterator:

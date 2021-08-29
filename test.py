@@ -5,6 +5,7 @@ from cascade import CascadeElement
 import cv2
 import random
 import numpy as np
+from collections import OrderedDict
 
 
 def plot_box(x, img, label=None):
@@ -45,29 +46,46 @@ yolo = class_yolo(model)
 sort = class_sort()
 plot = CascadeElement(plot_all_bbox, name="Рисовалка")
 
-print(validate(
-    [yolo, sort, plot],
-    {
-        0: ['ITER'],
-        1: [0],
-        2: [1, 'ITER']
-    }
-))
+adjacency_map = OrderedDict([
+    (yolo, ['ITER']),
+    (sort, [yolo]),
+    (plot, [sort, 'ITER'])
+])
 
-print(validate(
-    [yolo, sort, plot],
-    {
-        0: ['ITER'],
-        1: [0, 'ITER'],
-        2: [1, 'ITER']
-    }
-))
+item = None
 
-print(validate(
-    [sort, yolo, plot],
-    {
-        0: ['ITER'],
-        1: [0],
-        2: [1, 'ITER']
-    }
-))
+a = [item if j == 'ITER' else j.out for j in adjacency_map[sort]]
+
+print(adjacency_map)
+# print([x for x in adjacency_map])
+# for cascade, inp in adjacency_map.items():
+#     print(cascade, inp)
+
+
+#
+# # print(validate(
+#     [yolo, sort, plot],
+#     {
+#         0: ['ITER'],
+#         1: [0],
+#         2: [1, 'ITER']
+#     }
+# ))
+# #
+# print(validate(
+#     [yolo, sort, plot],
+#     {
+#         0: ['ITER'],
+#         1: [0, 'ITER'],
+#         2: [1, 'ITER']
+#     }
+# ))
+#
+# print(validate(
+#     [sort, yolo, plot],
+#     {
+#         0: ['ITER'],
+#         1: [0],
+#         2: [1, 'ITER']
+#     }
+# ))
