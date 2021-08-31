@@ -43,10 +43,8 @@ class CascadeElement(Cascade):
 
 class CascadeBlock(Cascade):
     """
-    Занимается всей логикой для связи каскадов
-    Может содержать CascadeElement и CascadeBlock
-    Необходим list из Каскадов и матрица смежностей их
-    (dict где ключ - id Каскада в list, а значение - id Каскадов, выход из которых пойдёт на вход)
+    Занимается всей логикой для связи каскадов Может содержать CascadeElement и CascadeBlock Необходима матрица
+    смежности (OrderedDict где ключ - Каскад, а значение - list Каскадов, выход из которых пойдёт на вход)
 
     Если при вызове Каскад передал None, то передаёт None (важно учитывать при создании функций)
     Имя блока - это все имена каскадов, из которых он состоит (у заготовленных блоков __str__ - это заготовленное имя)
@@ -57,6 +55,7 @@ class CascadeBlock(Cascade):
         self.adjacency_map = adjacency_map
         self.input = signature(next(iter(adjacency_map))).parameters
         self.output = signature(next(reversed(adjacency_map))).return_annotation
+
         name = "[" + ", ".join([str(x.name) for x in adjacency_map]) + "]"
         super(CascadeBlock, self).__init__(name)
 

@@ -29,12 +29,9 @@ def plot_all_bbox(bbox: np.ndarray, img: np.ndarray) -> np.ndarray:
     return img
 
 
-def validate(cascades_list, adjacency_map):
+def validate(adjacency_map):
     for key, inp in adjacency_map.items():
-        element = cascades_list[key]
-        print(element.input, element.output)
-    print('\n\n')
-    pass
+        pass
 
 
 struct = get_structure()
@@ -52,17 +49,12 @@ adjacency_map = OrderedDict([
     (plot, [sort, 'ITER'])
 ])
 
-item = None
-
-a = [item if j == 'ITER' else j.out for j in adjacency_map[sort]]
-
 print(adjacency_map)
 # print([x for x in adjacency_map])
 # for cascade, inp in adjacency_map.items():
 #     print(cascade, inp)
 
 
-#
 # # print(validate(
 #     [yolo, sort, plot],
 #     {
