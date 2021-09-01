@@ -1,17 +1,17 @@
 import cascades
 import cascade_function
+import cascade_services
+
 from addict import Dict
 import types
 import inspect
 import cascade
-
 
 standard_class = list(filter(lambda x: not x.startswith('_'), dir(cascade)))
 
 
 def rec_dive_models(obj):
     attributes = list(filter(lambda x: not x.startswith('_'), dir(obj)))
-
     if not isinstance(getattr(obj, attributes[0]), types.ModuleType):
         for x in attributes:
             if x not in standard_class and inspect.isclass(getattr(obj, x)):
@@ -47,5 +47,5 @@ def get_structure():
 
     file_struct['model'] = rec_dive_models(cascades)
     file_struct['function'] = rec_dive_function(cascade_function)
-
+    file_struct['services'] = rec_dive_models(cascade_services)
     return file_struct
