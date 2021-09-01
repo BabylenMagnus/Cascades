@@ -67,6 +67,7 @@ class CascadeBlock(Cascade):
             if cascade(*[item if j == 'ITER' else j.out for j in inp]) is None:
                 return None
 
+        self.out = cascade.out
         return cascade.out
 
     def loop(self, iterator):
