@@ -50,7 +50,7 @@ class CascadeBlock(Cascade):
     Имя блока - это все имена каскадов, из которых он состоит (у заготовленных блоков __str__ - это заготовленное имя)
     """
 
-    def __init__(self, adjacency_map: OrderedDict[CascadeElement, list]):
+    def __init__(self, adjacency_map: OrderedDict):
 
         self.adjacency_map = adjacency_map
         self.input = signature(next(iter(adjacency_map))).parameters

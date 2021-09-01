@@ -1,4 +1,4 @@
-from mutagen.mp3 import MP3
+from mutagen import mp3
 
 from tinkoff.cloud.stt.v1 import stt_pb2_grpc, stt_pb2
 import grpc
@@ -33,7 +33,7 @@ def generate_jwt(api_key, secret_key, payload, expiration_time=6000):
     return jwt.decode("utf-8")
 
 
-def authorization_metadata(api_key, secret_key, scope, expiration_time):
+def authorization_metadata(api_key: str, secret_key, scope, expiration_time):
     auth_payload = {
         "iss": "test_issuer",
         "sub": "test_user",
@@ -47,7 +47,7 @@ def authorization_metadata(api_key, secret_key, scope, expiration_time):
 
 
 def build_request(path: str, max_alternatives: int, do_not_perform_vad: bool, profanity_filter: bool):
-    mp3_file = MP3(path)
+    mp3_file = mp3.MP3(path)
     num_ch = int(mp3_file.info.channels)
     sr_audio = int(mp3_file.info.sample_rate)
     request = stt_pb2.RecognizeRequest()
